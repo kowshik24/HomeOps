@@ -4,23 +4,101 @@ struct ItemRowView: View {
     let item: Item
     
     var body: some View {
-        HStack(spacing: 15) {
-            Image(systemName: categoryIcon(for: item.category))
-                .font(.title2)
-                .foregroundColor(.accentColor)
-                .frame(width: 40, height: 40)
-                .background(Color.accentColor.opacity(0.1))
-                .cornerRadius(8)
+        HStack(spacing: AppSpacing.md) {
+            // Thumbnail or Category Icon
+            thumbnail
             
-            VStack(alignment: .leading, spacing: 4) {
-                Text(item.name)
-                    .font(.headline)
-                    .fontWeight(.semibold)
+            // Content
+            VStack(alignment: .leading, spacing: AppSpacing.xs) {
+                // Header: Name + Badge
+                HStack {
+                    Text(item.name)
+                        .font(AppTypography.headline)
+                        .foregroundColor(.primary)
+                        .lineLimit(1)
+                    
+                    Spacer()
+                    
+                    StatusBadge(daysRemaining: item.daysRemaining)
+                }
                 
+                // Category
+                Text(item.category)
+                    .font(AppTypography.caption)
+                    .foregroundColor(.secondary)
+                
+                // Warranty Progress
                 WarrantyProgressIndicator(item: item)
+                    .padding(.top, AppSpacing.xs)
+                
+                // Footer: Expiration Date
+                HStack {
+                    Image(systemName: "calendar")
+                        .font(.caption2)
+                    Text("Expires \(item.warrantyExpirationDate, style: .date)")
+                        .font(AppTypography.caption2)
+                    Spacer()
+                }
+                .foregroundColor(.secondary)
             }
         }
-        .padding(.vertical, 8)
+        .padding(AppSpacing.md)
+        .cardStyle(elevation: .low)
+        .overlay(
+            RoundedRectangle(cornerRadius: AppRadius.md)
+                .stroke(borderColor, lineWidth: 2)
+                .opacity(0.3)
+        )
+    }
+    
+    // MARK: - Thumbnail
+    @ViewBuilder
+    private var thumbnail: some View {
+        ZStack {
+            if let imageData = item.receiptImageData, let uiImage = UIImage(data: imageData) {
+                Image(uiImage: uiImage)
+                    .resizable()
+                    .scaledToFill()
+                    .frame(width: 70, height: 70)
+                    .clipShape(RoundedRectangle(cornerRadius: AppRadius.sm))
+            } else {
+                RoundedRectangle(cornerRadius: AppRadius.sm)
+                    .fill(categoryGradient)
+                    .frame(width: 70, height: 70)
+                    .overlay(
+                        Image(systemName: categoryIcon(for: item.category))
+                            .font(.title2)
+                            .foregroundColor(.white)
+                    )
+            }
+        }
+        .shadow(color: AppShadow.small.color, radius: AppShadow.small.radius, x: AppShadow.small.x, y: AppShadow.small.y)
+    }
+    
+    // MARK: - Helpers
+    private var borderColor: Color {
+        if item.daysRemaining <= 7 {
+            return AppColors.statusExpiring
+        } else if item.daysRemaining <= 30 {
+            return AppColors.statusWarning
+        } else {
+            return .clear
+        }
+    }
+    
+    private var categoryGradient: LinearGradient {
+        switch item.category {
+        case "Electronics":
+            return LinearGradient(colors: [.blue, .cyan], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case "Appliances":
+            return LinearGradient(colors: [.purple, .pink], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case "Furniture":
+            return LinearGradient(colors: [.brown, .orange], startPoint: .topLeading, endPoint: .bottomTrailing)
+        case "Clothing":
+            return LinearGradient(colors: [.pink, .red], startPoint: .topLeading, endPoint: .bottomTrailing)
+        default:
+            return LinearGradient(colors: [.gray, .secondary], startPoint: .topLeading, endPoint: .bottomTrailing)
+        }
     }
     
     private func categoryIcon(for category: String) -> String {
@@ -28,18 +106,18 @@ struct ItemRowView: View {
         case "Electronics":
             return "desktopcomputer"
         case "Appliances":
-            return "refrigerator"
+            return "refrigerator.fill"
         case "Furniture":
-            return "chair.lounge"
+            return "chair.lounge.fill"
         case "Clothing":
-            return "tshirt"
+            return "tshirt.fill"
         default:
-            return "cube.box"
+            return "cube.box.fill"
         }
     }
 }
 
-// A dedicated view for the warranty progress bar
+// MARK: - Warranty Progress Indicator (Enhanced)
 struct WarrantyProgressIndicator: View {
     let item: Item
     
@@ -52,11 +130,11 @@ struct WarrantyProgressIndicator: View {
     
     private var progressColor: Color {
         if item.daysRemaining <= 30 {
-            return .red
+            return AppColors.statusExpiring
         } else if item.daysRemaining <= 90 {
-            return .orange
+            return AppColors.statusWarning
         } else {
-            return .green
+            return AppColors.statusActive
         }
     }
     
@@ -64,20 +142,18 @@ struct WarrantyProgressIndicator: View {
         VStack(alignment: .leading, spacing: 2) {
             GeometryReader { geometry in
                 ZStack(alignment: .leading) {
+                    // Background
                     Capsule()
                         .frame(width: geometry.size.width, height: 6)
                         .foregroundColor(Color(.systemGray5))
                     
+                    // Progress
                     Capsule()
                         .frame(width: geometry.size.width * CGFloat(warrantyProgress), height: 6)
                         .foregroundColor(progressColor)
                 }
             }
             .frame(height: 6)
-            
-            Text("\(item.daysRemaining) days remaining")
-                .font(.caption)
-                .foregroundColor(.secondary)
         }
     }
 }

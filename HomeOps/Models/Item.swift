@@ -16,7 +16,13 @@ final class Item {
     var warrantyDurationMonths: Int
     var serialNumber: String?
     var category: String
-    @Attribute(.externalStorage) var receiptImageData: Data? // Save heavy images outside DB
+    var purchasePrice: Double?
+    var storeName: String?
+    var notes: String?
+    var tags: [String]?
+    var location: String?
+    var isFavorite: Bool
+    @Attribute(.externalStorage) var receiptImageData: Data?
     
     var warrantyExpirationDate: Date {
         Calendar.current.date(byAdding: .month, value: warrantyDurationMonths, to: purchaseDate) ?? purchaseDate
@@ -28,11 +34,24 @@ final class Item {
         return components.day ?? 0
     }
     
+    var formattedPrice: String {
+        guard let price = purchasePrice else { return "N/A" }
+        let formatter = NumberFormatter()
+        formatter.numberStyle = .currency
+        formatter.locale = Locale.current
+        return formatter.string(from: NSNumber(value: price)) ?? "N/A"
+    }
+    
+    var displayTags: [String] {
+        tags ?? []
+    }
+    
     init(name: String, purchaseDate: Date, warrantyMonths: Int, category: String) {
         self.id = UUID()
         self.name = name
         self.purchaseDate = purchaseDate
         self.warrantyDurationMonths = warrantyMonths
         self.category = category
+        self.isFavorite = false
     }
 }

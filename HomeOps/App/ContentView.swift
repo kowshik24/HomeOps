@@ -15,10 +15,13 @@ struct ContentView: View {
     var body: some View {
         VStack(spacing: 0) {
             // Content
-            ZStack {
-                if selectedTab == .dashboard {
+            Group {
+                switch selectedTab {
+                case .dashboard:
                     DashboardView()
-                } else if selectedTab == .settings {
+                case .collections:
+                    SmartCollectionsView()
+                case .settings:
                     SettingsView()
                 }
             }
@@ -36,7 +39,7 @@ struct ContentView: View {
 }
 
 enum Tab {
-    case dashboard, settings
+    case dashboard, collections, settings
 }
 
 struct CustomTabBar: View {
@@ -44,26 +47,43 @@ struct CustomTabBar: View {
     var onAddButtonTapped: () -> Void
     
     var body: some View {
-        HStack {
-            TabBarButton(icon: "house.fill", label: "Dashboard", isSelected: selectedTab == .dashboard) {
-                selectedTab = .dashboard
+        HStack(spacing: 0) {
+            // Left side tabs
+            HStack(spacing: 0) {
+                TabBarButton(icon: "house.fill", label: "Dashboard", isSelected: selectedTab == .dashboard) {
+                    selectedTab = .dashboard
+                }
+                .frame(maxWidth: .infinity)
+                
+                TabBarButton(icon: "square.grid.2x2.fill", label: "Collections", isSelected: selectedTab == .collections) {
+                    selectedTab = .collections
+                }
+                .frame(maxWidth: .infinity)
             }
+            .frame(maxWidth: .infinity)
             
-            Spacer()
-            
+            // Center add button
             Button(action: onAddButtonTapped) {
-                Image(systemName: "plus.circle.fill")
-                    .font(.system(size: 50))
-                    .foregroundColor(.accentColor)
+                ZStack {
+                    Circle()
+                        .fill(Color.accentColor)
+                        .frame(width: 56, height: 56)
+                    
+                    Image(systemName: "plus")
+                        .font(.system(size: 24, weight: .semibold))
+                        .foregroundColor(.white)
+                }
             }
+            .offset(y: -8)
+            .padding(.horizontal, 20)
             
-            Spacer()
-            
+            // Right side tab
             TabBarButton(icon: "gear", label: "Settings", isSelected: selectedTab == .settings) {
                 selectedTab = .settings
             }
+            .frame(maxWidth: .infinity)
         }
-        .padding(.horizontal, 30)
+        .padding(.horizontal, 16)
         .padding(.top, 12)
         .padding(.bottom, 30)
         .background(.thinMaterial)
